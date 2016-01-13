@@ -22,6 +22,8 @@ func NewMembershipsCypherDriver(cypherRunner neocypherrunner.CypherRunner) Membe
 }
 
 func (mcd MembershipsCypherDriver) Read(uuid string) (membership, bool, error) {
+	fmt.Println("HERE")
+
 	results := []struct {
 		UUID              string     `json:"uuid"`
 		FactsetIdentifier string     `json:"factsetIdentifier"`
@@ -34,12 +36,11 @@ func (mcd MembershipsCypherDriver) Read(uuid string) (membership, bool, error) {
 	}{}
 
 	query := &neoism.CypherQuery{
-		//TODO
 		Statement: `MATCH (m:Membership {uuid:{uuid}})-[:HAS_ORGANISATION]->(o:Thing)
 					OPTIONAL MATCH (p:Thing)<-[:HAS_MEMBER]-(m)
 					OPTIONAL MATCH (r:Thing)<-[rr:HAS_ROLE]-(m)
 					WITH p, m, o, collect({roleuuid:r.uuid,inceptionDate:rr.inceptionDate,terminationDate:rr.terminationDate }) as membershipRoles
-					return m.uuid as uuid ,m.prefLabel as prefLabel,m.fsIdentifier as factsetIdentifier,m.inceptionDate as inceptionDate, 
+					return m.uuid as uuid ,m.prefLabel as prefLabel,m.factsetIdentifier as factsetIdentifier,m.inceptionDate as inceptionDate, 
 					m.terminationDate as terminationDate, o.uuid as organisationUuid, p.uuid as personUuid,membershipRoles`,
 
 		Parameters: map[string]interface{}{
@@ -94,9 +95,7 @@ func (mcd MembershipsCypherDriver) Write(m membership) error {
 	}
 
 	for _, identifier := range m.Identifiers {
-		fmt.Println("HERE")
 		if identifier.Authority == fsAuthority {
-			fmt.Println("HERE1")
 			params["factsetIdentifier"] = identifier.IdentifierValue
 		}
 	}
@@ -140,7 +139,7 @@ func (mcd MembershipsCypherDriver) Write(m membership) error {
 		if mr.TerminationDate != nil {
 			rrparams["terminationDate"] = mr.TerminationDate
 		}
-		//TODO change to deal with multiple rel to same role
+
 		query := &neoism.CypherQuery{
 			Statement: `
 				MERGE (m:Thing {uuid:{muuid}})
@@ -154,22 +153,60 @@ func (mcd MembershipsCypherDriver) Write(m membership) error {
 				"rrparams": rrparams,
 			},
 		}
+
 		queries = append(queries, query)
 	}
 	return mcd.cypherRunner.CypherBatch(queries)
 }
 
-func (pcd MembershipsCypherDriver) Delete(uuid string) error {
-	//TODO: this need to use the approach described in :
-	// https://docs.google.com/document/d/1Ec-umbNOZa9zht2FImAY-fsMDFgDDxBUMeokDTZZ3tQ/edit#heading=h.pgfg88uoy07a
-	query := &neoism.CypherQuery{
-		Statement: `MATCH (n:Membership {uuid:{uuid}}) DELETE n`,
+func (mcd MembershipsCypherDriver) Delete(uuid string) error {
+
+	clearNode := &neoism.CypherQuery{
+		Statement: `
+				MATCH (m:Thing {uuid: 'db6b11ae-114d-4f83-a044-f86505a0530a'})
+				OPTIONAL MATCH (m)-[prel:HAS_MEMBER]->(p:Thing)
+				OPTIONAL MATCH (m)-[orel:HAS_ORGANISATION]->(o:Thing)
+				OPTIONAL MATCH (r:Thing)<-[rrel:HAS_ROLE]-(m)
+				REMOVE m:Concept
+				REMOVE m:Membership
+				SET m={props}
+				DElETE rrel, orel, prel
+		`,
+		Parameters: map[string]interface{}{
+			"uuid": uuid,
+			"props": map[string]interface{}{
+				"uuid": uuid,
+			},
+		},
+	}
+
+	removeNodeIfUnused := &neoism.CypherQuery{
+		Statement: `
+				MATCH (m:Thing {uuid: {uuid}})
+				OPTIONAL MATCH (m)-[a]-(x)
+				WITH m, count(a) AS relCount
+				WHERE relCount = 0
+				DELETE m
+			`,
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
 		},
 	}
 
-	return pcd.cypherRunner.CypherBatch([]*neoism.CypherQuery{query})
+	err := mcd.cypherRunner.CypherBatch([]*neoism.CypherQuery{clearNode, removeNodeIfUnused})
+
+	//s1, err := clearNode.Stats()
+
+	if err != nil {
+		return err
+	}
+
+	/*var deleted bool
+	if s1.ContainsUpdates && s1.LabelsRemoved > 0 {
+		deleted = true
+	}*/
+
+	return err
 }
 
 const (

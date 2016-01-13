@@ -27,6 +27,7 @@ Use gojson against a transformer endpoint to create a person struct and update t
 
 This service is built and deployed via Jenkins.
 
+--TODO  these don't exist yet
 <a href="http://ftjen10085-lvpr-uk-p:8181/job/memberships-rw-neo4j-build">Build job</a>
 <a href="http://ftjen10085-lvpr-uk-p:8181/job/memberships-rw-neo4j-deploy">Deploy job</a>
 
@@ -72,6 +73,8 @@ Note the data in the example e.g. uuids etc is not real
 }`
 
 `curl -H "X-Request-Id: 123" localhost:8080/memberships/3fa70485-3a57-3b9b-9449-774b001cd965`
+
+
 
 Healthchecks: [http://localhost:8080/__health](http://localhost:8080/__health)
 

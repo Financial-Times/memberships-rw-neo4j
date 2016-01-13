@@ -70,6 +70,7 @@ func runServer(neoURL string, port string, batchSize int, timeoutMs int, graphit
 	r := mux.NewRouter()
 	r.HandleFunc("/memberships/{uuid}", membershipsWrite).Methods("PUT")
 	r.HandleFunc("/memberships/{uuid}", membershipsRead).Methods("GET")
+	r.HandleFunc("/memberships/{uuid}", membershipsDelete).Methods("DELETE")
 	r.HandleFunc("/__health", v1a.Handler("MembershipsReadWriteNeo4j Healthchecks",
 		"Checks for accessing neo4j", setUpHealthCheck(db, neoURL)))
 	r.HandleFunc("/ping", ping)
@@ -126,8 +127,7 @@ func membershipsWrite(w http.ResponseWriter, r *http.Request) {
 func membershipsRead(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
-
-	p, found, err := membershipsDriver.Read(uuid)
+	m, found, err := membershipsDriver.Read(uuid)
 
 	w.Header().Add("Content-Type", "application/json")
 
@@ -144,8 +144,35 @@ func membershipsRead(w http.ResponseWriter, r *http.Request) {
 
 	enc := json.NewEncoder(w)
 
-	if err := enc.Encode(p); err != nil {
+	if err := enc.Encode(m); err != nil {
 		log.Printf("ERROR Error on json encoding=%v\n", err)
+		w.WriteHeader(http.StatusServiceUnavailable)
+		return
+	}
+}
+
+func membershipsDelete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	uuid := vars["uuid"]
+	err := membershipsDriver.Delete(uuid)
+
+	w.Header().Add("Content-Type", "application/json")
+
+	if err != nil {
+		log.Printf("ERROR Error on read=%v\n", err)
+		w.WriteHeader(http.StatusServiceUnavailable)
+		return
+	}
+
+	// if !found {
+	// 	w.WriteHeader(http.StatusNotFound)
+	// 	return
+	// }
+
+	//enc := json.NewEncoder(w)
+
+	if err != nil {
+		log.Printf("ERROR Error on deletion=%v\n", err)
 		w.WriteHeader(http.StatusServiceUnavailable)
 		return
 	}
@@ -155,7 +182,6 @@ func parseMembership(jsonInput io.Reader) (membership, error) {
 	dec := json.NewDecoder(jsonInput)
 	var m membership
 	err := dec.Decode(&m)
-	fmt.Println(m)
 	return m, err
 }
 
