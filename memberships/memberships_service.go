@@ -29,8 +29,7 @@ func (mcd CypherDriver) Initialise() error {
 }
 
 func (mcd CypherDriver) Read(uuid string) (interface{}, bool, error) {
-	fmt.Println("HERE")
-
+	fmt.Print("HERE")
 	results := []struct {
 		UUID              string     `json:"uuid"`
 		FactsetIdentifier string     `json:"factsetIdentifier"`
@@ -67,6 +66,11 @@ func (mcd CypherDriver) Read(uuid string) (interface{}, bool, error) {
 
 	result := results[0]
 
+	//TODO fix query to not retun a role of empty fields when there are no roles
+	if len(result.MembershipRoles) == 1 && (result.MembershipRoles[0].RoleUUID == "") {
+		result.MembershipRoles = make([]role, 0, 0)
+	}
+
 	m := membership{
 		UUID:             result.UUID,
 		PrefLabel:        result.PrefLabel,
@@ -90,12 +94,12 @@ func (mcd CypherDriver) Write(thing interface{}) error {
 		"uuid": m.UUID,
 	}
 
-	if m.OrganisationUUID != "" {
-		//TODO error
+	if m.OrganisationUUID == "" {
+		return errors.New("cannot create Membership , organsation uuid missing")
 	}
 
-	if m.PersonUUID != "" {
-		//TODO error
+	if m.PersonUUID == "" {
+		return errors.New("cannot create Membership , person uuid missing")
 	}
 
 	if m.PrefLabel != "" {

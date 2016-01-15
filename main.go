@@ -4,6 +4,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 
+	"fmt"
 	"github.com/Financial-Times/base-ft-rw-app-go"
 	"github.com/Financial-Times/memberships-rw-neo4j/memberships"
 	"github.com/Financial-Times/neo-cypher-runner-go"
@@ -11,10 +12,10 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/jawher/mow.cli"
 	"github.com/jmcvetta/neoism"
-	//	"time"
 )
 
 func main() {
+	fmt.Print("HERE...")
 	log.SetLevel(log.InfoLevel)
 	log.Println("Application started with args %s", os.Args)
 	app := cli.App("memberships-rw-neo4j", "A RESTful API for managing Memberships in neo4j")

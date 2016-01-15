@@ -12,7 +12,7 @@ type membership struct {
 	InceptionDate    *time.Time   `json:"inceptionDate,omitempty"`
 	TerminationDate  *time.Time   `json:"terminationDate,omitempty"`
 	Identifiers      []identifier `json:"identifiers,omitempty"`
-	MembershipRoles  []role       `json:"membershipRoles,omitempty"`
+	MembershipRoles  []role       `json:"membershipRoles"`
 }
 
 type identifier struct {
@@ -21,7 +21,7 @@ type identifier struct {
 }
 
 type role struct {
-	RoleUUID        string     `json:"roleuuid"`
+	RoleUUID        string     `json:"roleuuid,omitempty"`
 	InceptionDate   *time.Time `json:"inceptionDate,omitempty"`
 	TerminationDate *time.Time `json:"terminationDate,omitempty"`
 }
