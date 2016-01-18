@@ -29,7 +29,6 @@ func (mcd CypherDriver) Initialise() error {
 }
 
 func (mcd CypherDriver) Read(uuid string) (interface{}, bool, error) {
-	fmt.Print("HERE")
 	results := []struct {
 		UUID              string     `json:"uuid"`
 		FactsetIdentifier string     `json:"factsetIdentifier"`
@@ -95,11 +94,15 @@ func (mcd CypherDriver) Write(thing interface{}) error {
 	}
 
 	if m.OrganisationUUID == "" {
-		return errors.New("cannot create Membership , organsation uuid missing")
+		errMsg := fmt.Sprintf("Organsation uuid missing  cannot create Membership with uuid=[%s]\n", m.UUID)
+		log.Error(errMsg)
+		return errors.New(errMsg)
 	}
 
 	if m.PersonUUID == "" {
-		return errors.New("cannot create Membership , person uuid missing")
+		errMsg := fmt.Sprintf("Person uuid missing  cannot create Membership with uuid=[%s]\n", m.UUID)
+		log.Error(errMsg)
+		return errors.New(errMsg)
 	}
 
 	if m.PrefLabel != "" {
