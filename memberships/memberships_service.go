@@ -2,14 +2,11 @@ package memberships
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
-
-	"time"
 
 	"github.com/Financial-Times/neo-cypher-runner-go"
 	"github.com/Financial-Times/neo-utils-go"
 	"github.com/jmcvetta/neoism"
+	"time"
 )
 
 type CypherDriver struct {
@@ -82,7 +79,10 @@ func (mcd CypherDriver) Read(uuid string) (interface{}, bool, error) {
 
 	if result.FactsetIdentifier != "" {
 		m.Identifiers = append(m.Identifiers, identifier{fsAuthority, result.FactsetIdentifier})
+	} else {
+		m.Identifiers = make([]identifier, 0, 0)
 	}
+
 	return m, true, nil
 }
 
@@ -91,18 +91,6 @@ func (mcd CypherDriver) Write(thing interface{}) error {
 
 	params := map[string]interface{}{
 		"uuid": m.UUID,
-	}
-
-	if m.OrganisationUUID == "" {
-		errMsg := fmt.Sprintf("Organsation uuid missing  cannot create Membership with uuid=[%s]\n", m.UUID)
-		log.Error(errMsg)
-		return errors.New(errMsg)
-	}
-
-	if m.PersonUUID == "" {
-		errMsg := fmt.Sprintf("Person uuid missing  cannot create Membership with uuid=[%s]\n", m.UUID)
-		log.Error(errMsg)
-		return errors.New(errMsg)
 	}
 
 	if m.PrefLabel != "" {
@@ -122,6 +110,10 @@ func (mcd CypherDriver) Write(thing interface{}) error {
 			params["factsetIdentifier"] = identifier.IdentifierValue
 		}
 	}
+	if len(m.Identifiers) == 0 {
+		m.Identifiers = make([]identifier, 0, 0)
+	}
+
 	query := &neoism.CypherQuery{
 		Statement: `MERGE (m:Thing {uuid: {uuid}})
 					MERGE (p:Thing {uuid: {personuuid}})
@@ -240,32 +232,7 @@ func (pcd CypherDriver) DecodeJSON(dec *json.Decoder) (interface{}, string, erro
 }
 
 func (pcd CypherDriver) Check() error {
-	type hcUUIDResult struct {
-		UUID string `json:"uuid"`
-	}
-
-	var result []hcUUIDResult
-
-	query := &neoism.CypherQuery{
-		Statement: `MATCH (m:Membership)
-					return  m.uuid as uuid
-					limit 1`,
-		Result: &result,
-	}
-
-	err := pcd.cypherRunner.CypherBatch([]*neoism.CypherQuery{query})
-
-	if err != nil {
-		return err
-	}
-	if len(result) == 0 {
-		return errors.New("No Membershp found")
-	}
-	if result[0].UUID == "" {
-		return errors.New("UUID not set")
-	}
-	return nil
-
+	return neoutils.Check(pcd.cypherRunner)
 }
 
 func (pcd CypherDriver) Count() (int, error) {
