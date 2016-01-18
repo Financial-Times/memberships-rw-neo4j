@@ -122,7 +122,8 @@ func TestUpdateWillRemovePropertiesNoLongerPresent(t *testing.T) {
 	readMembershipForUuidAndCheckFieldsMatch(t, uuid, membershipToWrite)
 
 	updatedMembership := membership{UUID: uuid, OrganisationUUID: orgUuid, PersonUUID: personUuid, PrefLabel: "Test2 label2",
-		Identifiers: []identifier{identifier{fsAuthority, "FACTSET_ID"}}}
+		Identifiers:     []identifier{identifier{fsAuthority, "FACTSET_ID"}},
+		MembershipRoles: make([]role, 0, 0)}
 
 	assert.NoError(membershipsDriver.Write(updatedMembership), "Failed to write updated membership")
 	readMembershipForUuidAndCheckFieldsMatch(t, uuid, updatedMembership)
