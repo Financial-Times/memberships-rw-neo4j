@@ -29,11 +29,11 @@ var fullMembership = membership{UUID: uuid, OrganisationUUID: "67890", PersonUUI
 	MembershipRoles: []role{role{"roleuuid", &incepDate, &termDate}},
 }
 
-var membershipsDriver baseftrwapp.Service
+var membershipsService baseftrwapp.Service
 
 func TestDeleteMembership(t *testing.T) {
 	assert := assert.New(t)
-	membershipsDriver = getMembershipsCypherDriver(t)
+	membershipsService = getMembershipsCypherDriver(t)
 
 	tests := []struct {
 		membershipToTest membership
@@ -42,13 +42,13 @@ func TestDeleteMembership(t *testing.T) {
 		{fullMembership},
 	}
 	for _, test := range tests {
-		assert.NoError(membershipsDriver.Write(test.membershipToTest), "Failed to write membership")
+		assert.NoError(membershipsService.Write(test.membershipToTest), "Failed to write membership")
 
-		deleted, err := membershipsDriver.Delete(uuid)
+		deleted, err := membershipsService.Delete(uuid)
 		assert.True(deleted, "Didn't manage to delete membership for uuid %", uuid)
 		assert.NoError(err, "Error deleting membership for uuid %s", uuid)
 
-		_, found, err := membershipsDriver.Read(uuid)
+		_, found, err := membershipsService.Read(uuid)
 
 		assert.False(found, "Found membership for uuid %s who should have been deleted", uuid)
 		assert.NoError(err, "Error trying to find membership for uuid %s", uuid)
@@ -57,7 +57,7 @@ func TestDeleteMembership(t *testing.T) {
 
 func TestCreateMembership(t *testing.T) {
 	assert := assert.New(t)
-	membershipsDriver = getMembershipsCypherDriver(t)
+	membershipsService = getMembershipsCypherDriver(t)
 	tests := []struct {
 		membershipToTest membership
 	}{
@@ -65,34 +65,53 @@ func TestCreateMembership(t *testing.T) {
 		{fullMembership},
 	}
 	for _, test := range tests {
-		assert.NoError(membershipsDriver.Write(test.membershipToTest), "Failed to write membership")
+		assert.NoError(membershipsService.Write(test.membershipToTest), "Failed to write membership")
 		readMembershipForUuidAndCheckFieldsMatch(t, uuid, test.membershipToTest)
+		cleanUpRelationshipsAndRelatedNodes(t, uuid)
 		cleanUp(t, uuid)
 	}
 }
 
 func TestCreateHandlesSpecialCharacters(t *testing.T) {
 	assert := assert.New(t)
-	membershipsDriver = getMembershipsCypherDriver(t)
+	membershipsService = getMembershipsCypherDriver(t)
 	membershipToWrite := fullMembership
 	membershipToWrite.PrefLabel = "Test's 'are' Us"
-	assert.NoError(membershipsDriver.Write(membershipToWrite), "Failed to write membership")
+	assert.NoError(membershipsService.Write(membershipToWrite), "Failed to write membership")
 	readMembershipForUuidAndCheckFieldsMatch(t, uuid, membershipToWrite)
+	cleanUpRelationshipsAndRelatedNodes(t, uuid)
 	cleanUp(t, uuid)
 }
 
 func TestUpdateWillRemovePropertiesNoLongerPresent(t *testing.T) {
 	assert := assert.New(t)
-	membershipsDriver = getMembershipsCypherDriver(t)
-	assert.NoError(membershipsDriver.Write(fullMembership), "Failed to write membership")
+	membershipsService = getMembershipsCypherDriver(t)
+	assert.NoError(membershipsService.Write(fullMembership), "Failed to write membership")
 	readMembershipForUuidAndCheckFieldsMatch(t, uuid, fullMembership)
 
-	updatedMembership := membership{UUID: uuid, OrganisationUUID: "678901", PersonUUID: "54321", PrefLabel: "Test2 label2",
+	updatedMembership := membership{UUID: uuid, OrganisationUUID: "67890", PersonUUID: "54321", PrefLabel: "Test2 label2",
 		Identifiers:     []identifier{identifier{fsAuthority, "FACTSET_ID2"}},
 		MembershipRoles: make([]role, 0, 0)}
 
-	assert.NoError(membershipsDriver.Write(updatedMembership), "Failed to write updated membership")
+	assert.NoError(membershipsService.Write(updatedMembership), "Failed to write updated membership")
 	readMembershipForUuidAndCheckFieldsMatch(t, uuid, updatedMembership)
+	cleanUpRelationshipsAndRelatedNodes(t, uuid)
+	cleanUp(t, uuid)
+}
+
+func TestUpdateWillReplaceOrgAndPerson(t *testing.T) {
+	assert := assert.New(t)
+	membershipsService = getMembershipsCypherDriver(t)
+	assert.NoError(membershipsService.Write(fullMembership), "Failed to write membership")
+	readMembershipForUuidAndCheckFieldsMatch(t, uuid, fullMembership)
+
+	updatedMembership := membership{UUID: uuid, OrganisationUUID: "121212", PersonUUID: "323232", PrefLabel: "Test2 label2",
+		Identifiers:     []identifier{identifier{fsAuthority, "FACTSET_ID2"}},
+		MembershipRoles: make([]role, 0, 0)}
+
+	assert.NoError(membershipsService.Write(updatedMembership), "Failed to write updated membership")
+	readMembershipForUuidAndCheckFieldsMatch(t, uuid, updatedMembership)
+	cleanUpRelationshipsAndRelatedNodes(t, uuid)
 	cleanUp(t, uuid)
 }
 
@@ -109,7 +128,7 @@ func getMembershipsCypherDriver(t *testing.T) CypherDriver {
 
 func readMembershipForUuidAndCheckFieldsMatch(t *testing.T, uuid string, expectedMembership membership) {
 	assert := assert.New(t)
-	storedMembership, found, err := membershipsDriver.Read(uuid)
+	storedMembership, found, err := membershipsService.Read(uuid)
 
 	assert.NoError(err, "Error finding membership for uuid %s", uuid)
 	assert.True(found, "Didn't find membership for uuid %s", uuid)
@@ -118,7 +137,23 @@ func readMembershipForUuidAndCheckFieldsMatch(t *testing.T, uuid string, expecte
 
 func cleanUp(t *testing.T, uuid string) {
 	assert := assert.New(t)
-	deleted, err := membershipsDriver.Delete(uuid)
+	deleted, err := membershipsService.Delete(uuid)
 	assert.True(deleted, "Didn't manage to delete person for uuid %", uuid)
 	assert.NoError(err, "Error deleting membership for uuid %s", uuid)
+}
+
+func cleanUpRelationshipsAndRelatedNodes(t *testing.T, uuid string) {
+	assert := assert.New(t)
+	membershipsCypherDriver := getMembershipsCypherDriver(t)
+	query := &neoism.CypherQuery{
+		Statement: `
+				MATCH (m:Thing {uuid: {muuid}})
+				OPTIONAL MATCH (n)<-[rel]-(m)
+			    delete rel, n
+			`,
+		Parameters: map[string]interface{}{
+			"muuid": uuid,
+		},
+	}
+	assert.NoError(membershipsCypherDriver.cypherRunner.CypherBatch([]*neoism.CypherQuery{query}), "Error deleting membership for uuid %s", uuid)
 }

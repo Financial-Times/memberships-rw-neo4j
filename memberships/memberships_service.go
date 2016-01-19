@@ -19,7 +19,7 @@ func NewCypherDriver(cypherRunner neocypherrunner.CypherRunner, indexManager neo
 }
 
 func (mcd CypherDriver) Initialise() error {
-	return neoutils.EnsureIndexes(mcd.indexManager, map[string]string{
+	return neoutils.EnsureConstraints(mcd.indexManager, map[string]string{
 		"Thing":      "uuid",
 		"Concept":    "uuid",
 		"Membership": "uuid"})
@@ -114,12 +114,25 @@ func (mcd CypherDriver) Write(thing interface{}) error {
 		m.Identifiers = make([]identifier, 0, 0)
 	}
 
+	queryDelEntitiessRel := &neoism.CypherQuery{
+		Statement: `MATCH (m:Thing {uuid: {uuid}})
+					OPTIONAL MATCH (p:Thing)<-[rm:HAS_MEMBER]-(m)
+					OPTIONAL MATCH (o:Thing)<-[ro:HAS_ORGANISATION]-(m)
+					DELETE rm, ro
+		`,
+		Parameters: map[string]interface{}{
+			"uuid": m.UUID,
+		},
+	}
+
+	queries := []*neoism.CypherQuery{queryDelEntitiessRel}
+
 	query := &neoism.CypherQuery{
 		Statement: `MERGE (m:Thing {uuid: {uuid}})
 					MERGE (p:Thing {uuid: {personuuid}})
 					MERGE (o:Thing {uuid: {organisationuuid}})
-					MERGE (m)-[:HAS_MEMBER]->(p)
-		            MERGE (m)-[:HAS_ORGANISATION]->(o)
+					CREATE(m)-[:HAS_MEMBER]->(p)
+		            CREATE (m)-[:HAS_ORGANISATION]->(o)
 					set m={allprops}
 					set m :Concept
 					set m :Membership
@@ -132,7 +145,7 @@ func (mcd CypherDriver) Write(thing interface{}) error {
 		},
 	}
 
-	queries := []*neoism.CypherQuery{query}
+	queries = append(queries, query)
 
 	queryDelRolesRel := &neoism.CypherQuery{
 		Statement: `MATCH (m:Thing {uuid: {uuid}})
