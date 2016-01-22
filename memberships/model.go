@@ -11,7 +11,7 @@ type membership struct {
 	OrganisationUUID string       `json:"organisationUuid"`
 	InceptionDate    *time.Time   `json:"inceptionDate,omitempty"`
 	TerminationDate  *time.Time   `json:"terminationDate,omitempty"`
-	Identifiers      []identifier `json:"identifiers,omitempty"`
+	Identifiers      []identifier `json:"identifiers"`
 	MembershipRoles  []role       `json:"membershipRoles"`
 }
 
