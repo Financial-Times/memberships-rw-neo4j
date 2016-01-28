@@ -10,23 +10,19 @@ import (
 	"github.com/Financial-Times/neo-utils-go"
 	"github.com/jmcvetta/neoism"
 	"github.com/stretchr/testify/assert"
-	"time"
 )
 
 const uuid = "12345"
 
-var incepDate = time.Date(2006, 1, 1, 12, 0, 0, 0, time.UTC)
-var termDate = time.Date(2008, 1, 1, 12, 0, 0, 0, time.UTC)
-
 var minimalMembership = membership{UUID: uuid, OrganisationUUID: "", PersonUUID: "", PrefLabel: "",
-	InceptionDate: nil, TerminationDate: nil,
+	InceptionDate: "", TerminationDate: "",
 	Identifiers:     make([]identifier, 0, 0),
 	MembershipRoles: make([]role, 0, 0),
 }
 var fullMembership = membership{UUID: uuid, OrganisationUUID: "67890", PersonUUID: "54321", PrefLabel: "Test label",
-	InceptionDate: &incepDate, TerminationDate: &termDate,
+	InceptionDate: "2005-01-01T00:00:00.000Z", TerminationDate: "2007-01-01T00:00:00.000Z",
 	Identifiers:     []identifier{identifier{fsAuthority, "FACTSET_ID"}},
-	MembershipRoles: []role{role{"roleuuid", &incepDate, &termDate}},
+	MembershipRoles: []role{role{"roleuuid", "2006-01-01T00:00:00.000Z", "2006-09-01T00:00:00.000Z"}},
 }
 
 var membershipsService baseftrwapp.Service

@@ -3,10 +3,11 @@ package memberships
 import (
 	"encoding/json"
 
+	"time"
+
 	"github.com/Financial-Times/neo-cypher-runner-go"
 	"github.com/Financial-Times/neo-utils-go"
 	"github.com/jmcvetta/neoism"
-	"time"
 )
 
 type CypherDriver struct {
@@ -26,24 +27,18 @@ func (mcd CypherDriver) Initialise() error {
 }
 
 func (mcd CypherDriver) Read(uuid string) (interface{}, bool, error) {
-	results := []struct {
-		UUID              string     `json:"uuid"`
-		FactsetIdentifier string     `json:"factsetIdentifier"`
-		PrefLabel         string     `json:"prefLabel"`
-		PersonUUID        string     `json:"personUuid"`
-		OrganisationUUID  string     `json:"organisationUuid"`
-		InceptionDate     *time.Time `json:"inceptionDate"`
-		TerminationDate   *time.Time `json:"terminationDate"`
-		MembershipRoles   []role     `json:"membershipRoles"`
-	}{}
+	results := []membership{}
 
 	query := &neoism.CypherQuery{
-		Statement: `MATCH (m:Membership {uuid:{uuid}})-[:HAS_ORGANISATION]->(o:Thing)
+		Statement: `
+		MATCH (m:Membership {uuid:{uuid}})-[:HAS_ORGANISATION]->(o:Thing)
 					OPTIONAL MATCH (p:Thing)<-[:HAS_MEMBER]-(m)
 					OPTIONAL MATCH (r:Thing)<-[rr:HAS_ROLE]-(m)
 					WITH p, m, o, collect({roleuuid:r.uuid,inceptionDate:rr.inceptionDate,terminationDate:rr.terminationDate }) as membershipRoles
-					return m.uuid as uuid ,m.prefLabel as prefLabel,m.factsetIdentifier as factsetIdentifier,m.inceptionDate as inceptionDate,
-					m.terminationDate as terminationDate, o.uuid as organisationUuid, p.uuid as personUuid,membershipRoles`,
+					WITH p, m, o, membershipRoles, collect({authority:'http://api.ft.com/system/FACTSET', identifierValue: m.factsetIdentifier})as identifiers
+					return m.uuid as uuid , m.prefLabel as prefLabel,m.inceptionDate as inceptionDate,
+					m.terminationDate as terminationDate, o.uuid as organisationUuid, p.uuid as personUuid,membershipRoles,identifiers
+					`,
 
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
@@ -63,27 +58,15 @@ func (mcd CypherDriver) Read(uuid string) (interface{}, bool, error) {
 	result := results[0]
 
 	//TODO fix query to not retun a role of empty fields when there are no roles
+	if len(result.Identifiers) == 1 && (result.Identifiers[0].IdentifierValue == "") {
+		result.Identifiers = make([]identifier, 0, 0)
+	}
+
 	if len(result.MembershipRoles) == 1 && (result.MembershipRoles[0].RoleUUID == "") {
 		result.MembershipRoles = make([]role, 0, 0)
 	}
 
-	m := membership{
-		UUID:             result.UUID,
-		PrefLabel:        result.PrefLabel,
-		PersonUUID:       result.PersonUUID,
-		OrganisationUUID: result.OrganisationUUID,
-		InceptionDate:    result.InceptionDate,
-		TerminationDate:  result.TerminationDate,
-		MembershipRoles:  result.MembershipRoles,
-	}
-
-	if result.FactsetIdentifier != "" {
-		m.Identifiers = append(m.Identifiers, identifier{fsAuthority, result.FactsetIdentifier})
-	} else {
-		m.Identifiers = make([]identifier, 0, 0)
-	}
-
-	return m, true, nil
+	return result, true, nil
 }
 
 func (mcd CypherDriver) Write(thing interface{}) error {
@@ -97,12 +80,12 @@ func (mcd CypherDriver) Write(thing interface{}) error {
 		params["prefLabel"] = m.PrefLabel
 	}
 
-	if m.InceptionDate != nil {
-		params["inceptionDate"] = m.InceptionDate
+	if m.InceptionDate != "" {
+		addDateToQueryParams(params, "inceptionDate", m.InceptionDate)
 	}
 
-	if m.TerminationDate != nil {
-		params["terminationDate"] = m.TerminationDate
+	if m.TerminationDate != "" {
+		addDateToQueryParams(params, "terminationDate", m.TerminationDate)
 	}
 
 	for _, identifier := range m.Identifiers {
@@ -161,11 +144,12 @@ func (mcd CypherDriver) Write(thing interface{}) error {
 	for _, mr := range m.MembershipRoles {
 		rrparams := make(map[string]interface{})
 
-		if mr.InceptionDate != nil {
-			rrparams["inceptionDate"] = mr.InceptionDate
+		if mr.InceptionDate != "" {
+			addDateToQueryParams(rrparams, "inceptionDate", mr.InceptionDate)
 		}
-		if mr.TerminationDate != nil {
-			rrparams["terminationDate"] = mr.TerminationDate
+
+		if mr.TerminationDate != "" {
+			addDateToQueryParams(rrparams, "terminationDate", mr.TerminationDate)
 		}
 
 		query := &neoism.CypherQuery{
@@ -266,6 +250,16 @@ func (pcd CypherDriver) Count() (int, error) {
 	}
 
 	return results[0].Count, nil
+}
+
+func addDateToQueryParams(params map[string]interface{}, dateName string, dateVal string) error {
+	params[dateName] = dateVal
+	datetimeEpoch, err := time.Parse(time.RFC3339, dateVal)
+	if err != nil {
+		return err
+	}
+	params[dateName+"DateEpoch"] = datetimeEpoch.Unix()
+	return nil
 }
 
 const (
