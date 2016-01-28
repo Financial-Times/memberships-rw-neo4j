@@ -28,8 +28,9 @@ Use gojson against a transformer endpoint to create a person struct and update t
 This service is built and deployed via Jenkins.
 
 --TODO  these don't exist yet
-<a href="http://ftjen10085-lvpr-uk-p:8181/job/memberships-rw-neo4j-build">Build job</a>
-<a href="http://ftjen10085-lvpr-uk-p:8181/job/memberships-rw-neo4j-deploy">Deploy job</a>
+<a href="http://ftjen10085-lvpr-uk-p:8181/view/JOBS-memberships-rw-neo4j/job/mrwn-memberships-rw-neo4j-build/">Build job</a>
+<a href="http://ftjen10085-lvpr-uk-p:8181/view/JOBS-memberships-rw-neo4j/job/mrwn-memberships-rw-neo4j-deploy-test/">Deploy Test</a>
+<a href="http://ftjen10085-lvpr-uk-p:8181/view/JOBS-memberships-rw-neo4j/job/mrwn-memberships-rw-neo4j-deploy-prod/">Deploy Prod</a>
 
 The build works via git tags. To prepare a new release
 - update the version in /puppet/ft-memberships_rw_neo4j/Modulefile, e.g. to 0.0.12
