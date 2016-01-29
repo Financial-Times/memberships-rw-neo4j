@@ -111,6 +111,38 @@ func TestUpdateWillReplaceOrgAndPerson(t *testing.T) {
 	cleanUp(t, uuid)
 }
 
+func TestWriteCalculateEpocCorrectly(t *testing.T) {
+	assert := assert.New(t)
+
+	membershipsService = getMembershipsCypherDriver(t)
+	membershipsService.Write(fullMembership)
+	membershipsCypherDriver := getMembershipsCypherDriver(t)
+
+	result := []struct {
+		MembershipInceptionDateEpoch   int `json:"m.inceptionDateEpoch"`
+		MembershipTerminationDateEpoch int `json:"m.terminationDateEpoch"`
+		RoleInceptionDateEpoch         int `json:"rr.inceptionDateEpoch"`
+		RoleTerminationDateEpoch       int `json:"rr.terminationDateEpoch"`
+	}{}
+
+	getEpocQuery := &neoism.CypherQuery{
+		Statement: `
+		MATCH (m:Membership {uuid:'12345'})
+			   OPTIONAL MATCH (r:Thing)<-[rr:HAS_ROLE]-(m)
+               return  m.inceptionDateEpoch, m.terminationDateEpoch , rr.inceptionDateEpoch, rr.terminationDateEpoch  
+		`,
+		Result: &result,
+	}
+
+	err := membershipsCypherDriver.cypherRunner.CypherBatch([]*neoism.CypherQuery{getEpocQuery})
+	assert.NoError(err)
+	assert.Equal(1104537600, result[0].MembershipInceptionDateEpoch, "Epoc of 2005-01-01T01:00:00.000Z should be 1104537600")
+	assert.Equal(1167609600, result[0].MembershipTerminationDateEpoch, "Epoc of 2007-01-01T01:00:00.000Z should be 1167609600")
+	assert.Equal(1136073600, result[0].RoleInceptionDateEpoch, "Epoc of  2006-01-01T01:00:00.000Z should be 1136073600")
+	assert.Equal(1157068800, result[0].RoleTerminationDateEpoch, "Epoc of 2006-09-01T01:00:00.000Z should be 1157068800")
+	cleanUp(t, uuid)
+}
+
 func getMembershipsCypherDriver(t *testing.T) CypherDriver {
 	assert := assert.New(t)
 	url := os.Getenv("NEO4J_TEST_URL")

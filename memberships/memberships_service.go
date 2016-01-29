@@ -258,7 +258,7 @@ func addDateToQueryParams(params map[string]interface{}, dateName string, dateVa
 	if err != nil {
 		return err
 	}
-	params[dateName+"DateEpoch"] = datetimeEpoch.Unix()
+	params[dateName+"Epoch"] = datetimeEpoch.Unix()
 	return nil
 }
 
