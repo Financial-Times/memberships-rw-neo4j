@@ -4,17 +4,17 @@ __An API for reading/writing memberships into Neo4j. Expects the memberships jso
 
 ## Installation
 
-For the first time: 
+For the first time:
 
-`go get github.com/Financial-Times/memberships-rw-neo4j` 
+`go get github.com/Financial-Times/memberships-rw-neo4j`
 
-or update: 
+or update:
 
 `go get -u github.com/Financial-Times/memberships-rw-neo4j`
-	
+
 ## Running
 
-`$GOPATH/bin/memberships-rw-neo4j --neo-url={neo4jUrl} --port={port} --batchSize=50 --timeoutMs=20
+`$GOPATH/bin/memberships-rw-neo4j --neo-url={neo4jUrl} --port={port} --batchSize=50 --timeoutMs=20`
 
 All arguments are optional, they default to a local Neo4j install on the default port (7474), application running on port 8080, batchSize of 1024 and timeoutMs of 50. NB: the default batchSize is much higher than the throughput the instance data ingester currently can cope with.
 
@@ -27,9 +27,8 @@ Use gojson against a transformer endpoint to create a person struct and update t
 
 This service is built and deployed via Jenkins.
 
---TODO  these don't exist yet
-<a href="http://ftjen10085-lvpr-uk-p:8181/view/JOBS-memberships-rw-neo4j/job/mrwn-memberships-rw-neo4j-build/">Build job</a>
-<a href="http://ftjen10085-lvpr-uk-p:8181/view/JOBS-memberships-rw-neo4j/job/mrwn-memberships-rw-neo4j-deploy-test/">Deploy Test</a>
+<a href="http://ftjen10085-lvpr-uk-p:8181/view/JOBS-memberships-rw-neo4j/job/mrwn-memberships-rw-neo4j-build/">Build job</a><br>
+<a href="http://ftjen10085-lvpr-uk-p:8181/view/JOBS-memberships-rw-neo4j/job/mrwn-memberships-rw-neo4j-deploy-test/">Deploy Test</a><br>
 <a href="http://ftjen10085-lvpr-uk-p:8181/view/JOBS-memberships-rw-neo4j/job/mrwn-memberships-rw-neo4j-deploy-prod/">Deploy Prod</a>
 
 The build works via git tags. To prepare a new release
