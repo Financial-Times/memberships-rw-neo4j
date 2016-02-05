@@ -16,11 +16,11 @@ import (
 )
 
 func main() {
-	log.SetLevel(log.InfoLevel)
-	log.Println("Application started with args %s", os.Args)
+	log.Println("Application starting with args %s", os.Args
 	app := cli.App("memberships-rw-neo4j", "A RESTful API for managing Memberships in neo4j")
 	neoURL := app.StringOpt("neo-url", "http://localhost:7474/db/data", "neo4j endpoint URL")
 	port := app.IntOpt("port", 8080, "Port to listen on")
+	env := app.StringOpt("env", "local", "environment this app is running in")
 	batchSize := app.IntOpt("batchSize", 1024, "Maximum number of statements to execute per batch")
 	graphiteTCPAddress := app.StringOpt("graphiteTCPAddress", "",
 		"Graphite TCP address, e.g. graphite.ft.com:2003. Leave as default if you do NOT want to output to graphite (e.g. if running locally)")
@@ -51,10 +51,12 @@ func main() {
 
 		baseftrwapp.RunServer(engs,
 			v1a.Handler("ft-memberships_rw_neo4j ServiceModule", "Writes 'memberships' to Neo4j, usually as part of a bulk upload done on a schedule", checks...),
-			*port)
+			*port, "memberships-rw-neo4j", *env)
 	}
 
 	app.Run(os.Args)
+	log.SetLevel(log.InfoLevel)
+	log.Println("Application started with args %s", os.Args)
 }
 
 func makeCheck(service baseftrwapp.Service, cr neocypherrunner.CypherRunner) v1a.Check {

@@ -43,6 +43,8 @@ The deploy also works via git tag and you can also select the environment to dep
 
 Note the data in the example e.g. uuids etc is not real
 
+PUT example:
+
 `curl -XPUT -H "X-Request-Id: 123" -H "Content-Type: application/json" localhost:8080/memberships/g10e101c-dbcf-356f-929e-669573defa56 --data '{
     "uuid": "g10e101c-dbcf-356f-929e-669573defa56",
     "prefLabel": "Partner",
@@ -73,8 +75,14 @@ Note the data in the example e.g. uuids etc is not real
     ]
 }`
 
+
+GET example:
+
 `curl -H "X-Request-Id: 123" localhost:8080/memberships/3fa70485-3a57-3b9b-9449-774b001cd965`
 
+DELETE example:
+
+`curl -H "X-Request-Id: 123" localhost:8080/memberships/3fa70485-3a57-3b9b-9449-774b001cd965`
 
 
 Healthchecks: [http://localhost:8080/__health](http://localhost:8080/__health)
