@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	log.Println("Application starting with args %s", os.Args
+	log.Println("Application starting with args %s", os.Args)
 	app := cli.App("memberships-rw-neo4j", "A RESTful API for managing Memberships in neo4j")
 	neoURL := app.StringOpt("neo-url", "http://localhost:7474/db/data", "neo4j endpoint URL")
 	port := app.IntOpt("port", 8080, "Port to listen on")
