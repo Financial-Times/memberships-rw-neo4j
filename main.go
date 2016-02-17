@@ -58,7 +58,7 @@ func main() {
 	log.Println("Application started with args %s", os.Args)
 }
 
-func makeCheck(service baseftrwapp.Service, cr neocypherrunner.CypherRunner) v1a.Check {
+func makeCheck(service baseftrwapp.Service, cr neoutils.CypherRunner) v1a.Check {
 	return v1a.Check{
 		BusinessImpact:   "Cannot read/write memberships via this writer",
 		Name:             "Check connectivity to Neo4j - neoUrl is a parameter in hieradata for this service",
