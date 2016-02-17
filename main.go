@@ -8,7 +8,6 @@ import (
 	"github.com/Financial-Times/base-ft-rw-app-go/baseftrwapp"
 	"github.com/Financial-Times/go-fthealth/v1a"
 	"github.com/Financial-Times/memberships-rw-neo4j/memberships"
-	"github.com/Financial-Times/neo-cypher-runner-go/neocypherrunner"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	log "github.com/Sirupsen/logrus"
 	"github.com/jawher/mow.cli"
@@ -34,7 +33,7 @@ func main() {
 			log.Errorf("Could not connect to neo4j, error=[%s]\n", err)
 		}
 
-		batchRunner := neocypherrunner.NewBatchCypherRunner(neoutils.StringerDb{db}, *batchSize)
+		batchRunner := neoutils.NewBatchCypherRunner(neoutils.StringerDb{db}, *batchSize)
 		membershipsDriver := memberships.NewCypherDriver(batchRunner, db)
 		membershipsDriver.Initialise()
 
