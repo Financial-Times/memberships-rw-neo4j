@@ -15,7 +15,7 @@ type CypherDriver struct {
 	indexManager neoutils.IndexManager
 }
 
-func NewCypherDriver(cypherRunner neocypherrunner.CypherRunner, indexManager neoutils.IndexManager) CypherDriver {
+func NewCypherDriver(cypherRunner neoutils.CypherRunner, indexManager neoutils.IndexManager) CypherDriver {
 	return CypherDriver{cypherRunner, indexManager}
 }
 
