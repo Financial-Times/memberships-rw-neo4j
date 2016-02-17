@@ -5,7 +5,7 @@ import (
 
 	"time"
 
-	"github.com/Financial-Times/neo-cypher-runner-go"
+	"github.com/Financial-Times/neo-cypher-runner-go/neocypherrunner"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/jmcvetta/neoism"
 )
