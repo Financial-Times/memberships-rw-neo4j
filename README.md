@@ -4,6 +4,8 @@ Memberships Reader/Writer for Neo4j (memberships-rw-neo4j)
 __An API for reading/writing memberships into Neo4j. Expects the memberships json supplied to be in the format
 that comes out of the memberships transformer.__
 
+[![CircleCI](https://circleci.com/gh/Financial-Times/memberships-rw-neo4j.svg?style=svg)](https://circleci.com/gh/Financial-Times/memberships-rw-neo4j)
+
 
 Installation
 ------------
