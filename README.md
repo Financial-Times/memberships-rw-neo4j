@@ -1,8 +1,12 @@
-# Memberships Reader/Writer for Neo4j (memberships-rw-neo4j)
+Memberships Reader/Writer for Neo4j (memberships-rw-neo4j)
+==========================================================
 
-__An API for reading/writing memberships into Neo4j. Expects the memberships json supplied to be in the format that comes out of the memberships transformer.__
+__An API for reading/writing memberships into Neo4j. Expects the memberships json supplied to be in the format
+that comes out of the memberships transformer.__
 
-## Installation
+
+Installation
+------------
 
 For the first time:
 
@@ -12,18 +16,27 @@ or update:
 
 `go get -u github.com/Financial-Times/memberships-rw-neo4j`
 
-## Running
+
+Running
+-------
 
 `$GOPATH/bin/memberships-rw-neo4j --neo-url={neo4jUrl} --port={port} --batchSize=50 --timeoutMs=20`
 
-All arguments are optional, they default to a local Neo4j install on the default port (7474), application running on port 8080, batchSize of 1024 and timeoutMs of 50. NB: the default batchSize is much higher than the throughput the instance data ingester currently can cope with.
+All arguments are optional, they default to a local Neo4j install on the default port (7474), application running on port 8080,
+batchSize of 1024 and timeoutMs of 50. NB: the default batchSize is much higher than the throughput the instance data
+ingester currently can cope with.
 
-## Updating the model
+
+Updating the model
+------------------
+
 Use gojson against a transformer endpoint to create a person struct and update the model.go file. NB: we DO need a separate identifier struct
 
 `curl http://ftaps35629-law1a-eu-t:8080/transformers/memberships/g10e101c-dbcf-356f-929e-669573defa56`
 
-## Building
+
+Building
+--------
 
 This service is built and deployed via Jenkins.
 
@@ -38,9 +51,11 @@ The build works via git tags. To prepare a new release
 
 The deploy also works via git tag and you can also select the environment to deploy to.
 
-## Try it!
 
-Note the data in the example e.g. uuids etc is not real
+Try it!
+-------
+
+Note the data in the example (e.g. UUIDs) is not real.
 
 PUT example:
 
@@ -50,8 +65,8 @@ PUT example:
     "personUuid": "4cd0e22e-6db4-3768-aa18-8c91e6090a9d",
     "organisationUuid": "c75c10df-0bbc-3c61-8e8e-30a2ff0042aa",
     "inceptionDate": "2004-01-01T00:00:00.000Z",
-	"terminationDate": "2005-01-01T00:00:00.000Z",
- 	"identifiers": [
+    "terminationDate": "2005-01-01T00:00:00.000Z",
+    "identifiers": [
         {
             "authority": "http://api.ft.com/system/FACTSET",
             "identifierValue": "100007"
@@ -65,7 +80,7 @@ PUT example:
         {
             "roleUuid": "eaa6f59e-b24c-3d36-8b79-062381f828e0",
             "inceptionDate": "2004-01-01T00:00:00.000Z",
-			"terminationDate": "2005-01-01T00:00:00.000Z"
+            "terminationDate": "2005-01-01T00:00:00.000Z"
         },
         {
             "roleUuid": "73b9c823-aa25-33b7-abe8-1e6d830ded55",
@@ -91,7 +106,9 @@ Good-to-go: [http://localhost:8080/__gtg](http://localhost:8080/__gtg)
 Ping: [http://localhost:8080/ping](http://localhost:8080/ping)
 
 ### Logging
- the application uses logrus, the logfile is initilaised in main.go.
- logging requires an env app parameter, for all enviromets  other than local logs are written to file
- when running locally logging is written to console (if you want to log locally to file you need to pass in an env parameter that is != local)
+
+The application uses [logrus](https://github.com/Sirupsen/logrus), the log file is initialised in [main.go](main.go).
+Logging requires an env app parameter, for all environments other than local logs are written to file.
+When running locally, logging is written to console (if you want to log locally to file you need to pass in an env parameter
+that is != `local`.)
  
