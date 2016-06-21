@@ -5,10 +5,10 @@ import (
 
 	"time"
 
-	"github.com/Financial-Times/neo-utils-go/neoutils"
-	"github.com/jmcvetta/neoism"
 	"fmt"
+	"github.com/Financial-Times/neo-utils-go/neoutils"
 	log "github.com/Sirupsen/logrus"
+	"github.com/jmcvetta/neoism"
 )
 
 type CypherDriver struct {
@@ -22,11 +22,11 @@ func NewCypherDriver(cypherRunner neoutils.CypherRunner, indexManager neoutils.I
 
 func (mcd CypherDriver) Initialise() error {
 	return neoutils.EnsureConstraints(mcd.indexManager, map[string]string{
-		"Thing":         "uuid",
-		"Concept":       "uuid",
-		"Membership":    "uuid",
-		"TMEIdentifier": "value",
-		"UPPIdentifier": "value"})
+		"Thing":             "uuid",
+		"Concept":           "uuid",
+		"Membership":        "uuid",
+		"FactsetIdentifier": "value",
+		"UPPIdentifier":     "value"})
 }
 
 func (mcd CypherDriver) Read(uuid string) (interface{}, bool, error) {
@@ -38,8 +38,8 @@ func (mcd CypherDriver) Read(uuid string) (interface{}, bool, error) {
 					OPTIONAL MATCH (p:Thing)<-[:HAS_MEMBER]-(m)
 					OPTIONAL MATCH (r:Thing)<-[rr:HAS_ROLE]-(m)
 					OPTIONAL MATCH (upp:UPPIdentifier)-[:IDENTIFIES]->(n)
-					OPTIONAL MATCH (Factset:FactsetIdentifier)-[:IDENTIFIES]->(n)
-					WITH p, m, o, collect({roleuuid:r.uuid,inceptionDate:rr.inceptionDate,terminationDate:rr.terminationDate }) as membershipRoles
+					OPTIONAL MATCH (fs:FactsetIdentifier)-[:IDENTIFIES]->(n)
+					WITH p, m, o, upp, fs, collect({roleuuid:r.uuid,inceptionDate:rr.inceptionDate,terminationDate:rr.terminationDate}) as membershipRoles
 					return
 						m.uuid as uuid,
 						m.prefLabel as prefLabel,
@@ -48,7 +48,7 @@ func (mcd CypherDriver) Read(uuid string) (interface{}, bool, error) {
 						o.uuid as organisationUuid,
 						p.uuid as personUuid,
 						membershipRoles,
-						{uuids:collect(distinct upp.value), Factset:collect(distinct factset.value)} as alternativeIdentifiers`,
+						{uuids:collect(distinct upp.value), factsetIdentifier:fs.value} as alternativeIdentifiers`,
 
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
@@ -66,6 +66,8 @@ func (mcd CypherDriver) Read(uuid string) (interface{}, bool, error) {
 	}
 
 	result := results[0]
+
+	log.WithFields(log.Fields{"result_count": result}).Info("Returning results")
 
 	//TODO fix query to not retun a role of empty fields when there are no roles
 	// TODO Remove this block? or rewrite it to use AlternativeIdentifiers?
@@ -100,6 +102,17 @@ func (mcd CypherDriver) Write(thing interface{}) error {
 	if m.TerminationDate != "" {
 		addDateToQueryParams(params, "terminationDate", m.TerminationDate)
 	}
+
+	//cleanUP all the previous IDENTIFIERS referring to that uuid
+	deletePreviousIdentifiersQuery := &neoism.CypherQuery{
+		Statement: `MATCH (t:Thing {uuid:{uuid}})
+		OPTIONAL MATCH (t)<-[iden:IDENTIFIES]-(i)
+		DELETE iden, i`,
+		Parameters: map[string]interface{}{
+			"uuid": m.UUID,
+		},
+	}
+	queries = append(queries, deletePreviousIdentifiersQuery)
 
 	queryDelEntitiesRel := &neoism.CypherQuery{
 		Statement: `MATCH (m:Thing {uuid: {uuid}})
@@ -187,7 +200,7 @@ func (mcd CypherDriver) Write(thing interface{}) error {
 
 		queries = append(queries, q)
 	}
-	log.WithFields(log.Fields{"query_count":len(queries)}).Info("Executing queries...")
+	log.WithFields(log.Fields{"query_count": len(queries)}).Info("Executing queries...")
 	return mcd.cypherRunner.CypherBatch(queries)
 }
 

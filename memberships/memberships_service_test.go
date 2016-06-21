@@ -17,14 +17,14 @@ const uuid = "12345"
 var minimalMembership = membership{UUID: uuid, OrganisationUUID: "", PersonUUID: "", PrefLabel: "",
 	InceptionDate: "", TerminationDate: "",
 	//Identifiers:     make([]identifier, 0, 0),
-	AlternativeIdentifiers:     alternativeIdentifiers{"", make([]alternativeIdentifiers, 0, 0)},
-	MembershipRoles: make([]role, 0, 0),
+	AlternativeIdentifiers: alternativeIdentifiers{"", make([]alternativeIdentifiers, 0, 0)},
+	MembershipRoles:        make([]role, 0, 0),
 }
 var fullMembership = membership{UUID: uuid, OrganisationUUID: "67890", PersonUUID: "54321", PrefLabel: "Test label",
 	InceptionDate: "2005-01-01T00:00:00.000Z", TerminationDate: "2007-01-01T00:00:00.000Z",
 	//Identifiers:     []identifier{identifier{fsAuthority, "FACTSET_ID"}},
-	AlternativeIdentifiers:     alternativeIdentifiers{"", make([]alternativeIdentifiers, 0, 0)},
-	MembershipRoles: []role{role{"roleuuid", "2006-01-01T00:00:00.000Z", "2006-09-01T00:00:00.000Z"}},
+	AlternativeIdentifiers: alternativeIdentifiers{"", make([]alternativeIdentifiers, 0, 0)},
+	MembershipRoles:        []role{role{"roleuuid", "2006-01-01T00:00:00.000Z", "2006-09-01T00:00:00.000Z"}},
 }
 
 var membershipsService baseftrwapp.Service

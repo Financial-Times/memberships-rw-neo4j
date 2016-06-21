@@ -66,9 +66,13 @@ Try it!
 
 Note the data in the example (e.g. UUIDs) is not real.
 
-* PUT example: see [put.bash](put.bash).
+* PUT example: see [test_put.bash](test_put.bash):
 
-* GET example piping to `jq` (using the same UUID as the `PUT` request above): see [get.bash](get.bash).
+        ./test_put.bash
+
+* GET example piping to `jq` (using the same UUID as the `PUT` request above): see [test_get.bash](test_get.bash):
+
+        ./test_get.bash | jq '.'
 
 * DELETE example:
 
