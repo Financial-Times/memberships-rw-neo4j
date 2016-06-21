@@ -67,13 +67,7 @@ func (mcd CypherDriver) Read(uuid string) (interface{}, bool, error) {
 
 	result := results[0]
 
-	log.WithFields(log.Fields{"result_count": result}).Info("Returning results")
-
-	//TODO fix query to not retun a role of empty fields when there are no roles
-	// TODO Remove this block? or rewrite it to use AlternativeIdentifiers?
-	//if len(result.AlternativeIdentifiers) == 1 && (result.Identifiers[0].IdentifierValue == "") {
-	//	result.Identifiers = make([]identifier, 0, 0)
-	//}
+	log.WithFields(log.Fields{"result_count": result}).Debug("Returning results")
 
 	if len(result.MembershipRoles) == 1 && (result.MembershipRoles[0].RoleUUID == "") {
 		result.MembershipRoles = make([]role, 0, 0)
@@ -127,7 +121,7 @@ func (mcd CypherDriver) Write(thing interface{}) error {
 	queries = append(queries, queryDelEntitiesRel)
 
 	if m.AlternativeIdentifiers.FactsetIdentifier != "" {
-		log.Info("Creating FactsetIdentifier query")
+		log.Debug("Creating FactsetIdentifier query")
 		q := createNewIdentifierQuery(
 			m.UUID,
 			factsetIdentifierLabel,
@@ -137,7 +131,7 @@ func (mcd CypherDriver) Write(thing interface{}) error {
 	}
 
 	for _, alternativeUUID := range m.AlternativeIdentifiers.UUIDS {
-		log.Info("Processing alternative UUID")
+		log.Debug("Processing alternative UUID")
 		q := createNewIdentifierQuery(m.UUID, uppIdentifierLabel, alternativeUUID)
 		queries = append(queries, q)
 	}
@@ -200,7 +194,7 @@ func (mcd CypherDriver) Write(thing interface{}) error {
 
 		queries = append(queries, q)
 	}
-	log.WithFields(log.Fields{"query_count": len(queries)}).Info("Executing queries...")
+	log.WithFields(log.Fields{"query_count": len(queries)}).Debug("Executing queries...")
 	return mcd.cypherRunner.CypherBatch(queries)
 }
 

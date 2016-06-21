@@ -9,7 +9,7 @@ curl -s -i -XPUT -H "X-Request-Id: 123" -H "Content-Type: application/json" loca
     "terminationDate": "2005-01-01T00:00:00.000Z",
     "alternativeIdentifiers": {
             "factsetIdentifier": "12345",
-            "uuids": ["28198957-954f-4810-b2cd-843f1f6150b7"]
+            "uuids": ["g10e101c-dbcf-356f-929e-669573defa56"]
     },
     "membershipRoles": [
         {
