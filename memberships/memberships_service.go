@@ -7,6 +7,8 @@ import (
 
 	"github.com/Financial-Times/neo-utils-go/neoutils"
 	"github.com/jmcvetta/neoism"
+	"fmt"
+	log "github.com/Sirupsen/logrus"
 )
 
 type CypherDriver struct {
@@ -20,9 +22,11 @@ func NewCypherDriver(cypherRunner neoutils.CypherRunner, indexManager neoutils.I
 
 func (mcd CypherDriver) Initialise() error {
 	return neoutils.EnsureConstraints(mcd.indexManager, map[string]string{
-		"Thing":      "uuid",
-		"Concept":    "uuid",
-		"Membership": "uuid"})
+		"Thing":         "uuid",
+		"Concept":       "uuid",
+		"Membership":    "uuid",
+		"TMEIdentifier": "value",
+		"UPPIdentifier": "value"})
 }
 
 func (mcd CypherDriver) Read(uuid string) (interface{}, bool, error) {
@@ -33,11 +37,18 @@ func (mcd CypherDriver) Read(uuid string) (interface{}, bool, error) {
 		MATCH (m:Membership {uuid:{uuid}})-[:HAS_ORGANISATION]->(o:Thing)
 					OPTIONAL MATCH (p:Thing)<-[:HAS_MEMBER]-(m)
 					OPTIONAL MATCH (r:Thing)<-[rr:HAS_ROLE]-(m)
+					OPTIONAL MATCH (upp:UPPIdentifier)-[:IDENTIFIES]->(n)
+					OPTIONAL MATCH (Factset:FactsetIdentifier)-[:IDENTIFIES]->(n)
 					WITH p, m, o, collect({roleuuid:r.uuid,inceptionDate:rr.inceptionDate,terminationDate:rr.terminationDate }) as membershipRoles
-					WITH p, m, o, membershipRoles, collect({authority:'http://api.ft.com/system/FACTSET', identifierValue: m.factsetIdentifier})as identifiers
-					return m.uuid as uuid , m.prefLabel as prefLabel,m.inceptionDate as inceptionDate,
-					m.terminationDate as terminationDate, o.uuid as organisationUuid, p.uuid as personUuid,membershipRoles,identifiers
-					`,
+					return
+						m.uuid as uuid,
+						m.prefLabel as prefLabel,
+						m.inceptionDate as inceptionDate,
+						m.terminationDate as terminationDate,
+						o.uuid as organisationUuid,
+						p.uuid as personUuid,
+						membershipRoles,
+						{uuids:collect(distinct upp.value), Factset:collect(distinct factset.value)} as alternativeIdentifiers`,
 
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
@@ -57,9 +68,10 @@ func (mcd CypherDriver) Read(uuid string) (interface{}, bool, error) {
 	result := results[0]
 
 	//TODO fix query to not retun a role of empty fields when there are no roles
-	if len(result.Identifiers) == 1 && (result.Identifiers[0].IdentifierValue == "") {
-		result.Identifiers = make([]identifier, 0, 0)
-	}
+	// TODO Remove this block? or rewrite it to use AlternativeIdentifiers?
+	//if len(result.AlternativeIdentifiers) == 1 && (result.Identifiers[0].IdentifierValue == "") {
+	//	result.Identifiers = make([]identifier, 0, 0)
+	//}
 
 	if len(result.MembershipRoles) == 1 && (result.MembershipRoles[0].RoleUUID == "") {
 		result.MembershipRoles = make([]role, 0, 0)
@@ -70,6 +82,8 @@ func (mcd CypherDriver) Read(uuid string) (interface{}, bool, error) {
 
 func (mcd CypherDriver) Write(thing interface{}) error {
 	m := thing.(membership)
+
+	queries := []*neoism.CypherQuery{}
 
 	params := map[string]interface{}{
 		"uuid": m.UUID,
@@ -87,16 +101,7 @@ func (mcd CypherDriver) Write(thing interface{}) error {
 		addDateToQueryParams(params, "terminationDate", m.TerminationDate)
 	}
 
-	for _, identifier := range m.Identifiers {
-		if identifier.Authority == fsAuthority {
-			params["factsetIdentifier"] = identifier.IdentifierValue
-		}
-	}
-	if len(m.Identifiers) == 0 {
-		m.Identifiers = make([]identifier, 0, 0)
-	}
-
-	queryDelEntitiessRel := &neoism.CypherQuery{
+	queryDelEntitiesRel := &neoism.CypherQuery{
 		Statement: `MATCH (m:Thing {uuid: {uuid}})
 					OPTIONAL MATCH (p:Thing)<-[rm:HAS_MEMBER]-(m)
 					OPTIONAL MATCH (o:Thing)<-[ro:HAS_ORGANISATION]-(m)
@@ -106,11 +111,26 @@ func (mcd CypherDriver) Write(thing interface{}) error {
 			"uuid": m.UUID,
 		},
 	}
+	queries = append(queries, queryDelEntitiesRel)
 
-	queries := []*neoism.CypherQuery{queryDelEntitiessRel}
+	if m.AlternativeIdentifiers.FactsetIdentifier != "" {
+		log.Info("Creating FactsetIdentifier query")
+		q := createNewIdentifierQuery(
+			m.UUID,
+			factsetIdentifierLabel,
+			m.AlternativeIdentifiers.FactsetIdentifier,
+		)
+		queries = append(queries, q)
+	}
 
-	query := &neoism.CypherQuery{
-		Statement: `MERGE (m:Thing {uuid: {uuid}})
+	for _, alternativeUUID := range m.AlternativeIdentifiers.UUIDS {
+		log.Info("Processing alternative UUID")
+		q := createNewIdentifierQuery(m.UUID, uppIdentifierLabel, alternativeUUID)
+		queries = append(queries, q)
+	}
+
+	createMembershipQuery := &neoism.CypherQuery{
+		Statement: `MERGE (m:Thing	 {uuid: {uuid}})
 					MERGE (p:Thing {uuid: {personuuid}})
 					MERGE (o:Thing {uuid: {organisationuuid}})
 					CREATE(m)-[:HAS_MEMBER]->(p)
@@ -127,7 +147,7 @@ func (mcd CypherDriver) Write(thing interface{}) error {
 		},
 	}
 
-	queries = append(queries, query)
+	queries = append(queries, createMembershipQuery)
 
 	queryDelRolesRel := &neoism.CypherQuery{
 		Statement: `MATCH (m:Thing {uuid: {uuid}})
@@ -151,7 +171,7 @@ func (mcd CypherDriver) Write(thing interface{}) error {
 			addDateToQueryParams(rrparams, "terminationDate", mr.TerminationDate)
 		}
 
-		query := &neoism.CypherQuery{
+		q := &neoism.CypherQuery{
 			Statement: `
 				MERGE (m:Thing {uuid:{muuid}})
 				MERGE (r:Thing {uuid:{ruuid}})
@@ -165,9 +185,25 @@ func (mcd CypherDriver) Write(thing interface{}) error {
 			},
 		}
 
-		queries = append(queries, query)
+		queries = append(queries, q)
 	}
+	log.WithFields(log.Fields{"query_count":len(queries)}).Info("Executing queries...")
 	return mcd.cypherRunner.CypherBatch(queries)
+}
+
+func createNewIdentifierQuery(uuid string, identifierLabel string, identifierValue string) *neoism.CypherQuery {
+	statementTemplate := fmt.Sprintf(`MERGE (t:Thing {uuid:{uuid}})
+					CREATE (i:Identifier {value:{value}})
+					MERGE (t)<-[:IDENTIFIES]-(i)
+					set i : %s `, identifierLabel)
+	query := &neoism.CypherQuery{
+		Statement: statementTemplate,
+		Parameters: map[string]interface{}{
+			"uuid":  uuid,
+			"value": identifierValue,
+		},
+	}
+	return query
 }
 
 func (mcd CypherDriver) Delete(uuid string) (bool, error) {
