@@ -13,31 +13,31 @@ import (
 )
 
 const (
-membershipUUID string = "12345"
-personUUID string = "54321"
-orgUUID string =  "67890"
-	roleUUID string = "roleuuid"
+	membershipUUID string = "12345"
+	personUUID     string = "54321"
+	orgUUID        string = "67890"
+	roleUUID       string = "roleuuid"
 )
 
 var minimalMembership = membership{
-	UUID: membershipUUID,
-	OrganisationUUID: "",
-	PersonUUID: "",
-	PrefLabel: "",
-	InceptionDate: "",
-	TerminationDate: "",
+	UUID:                   membershipUUID,
+	OrganisationUUID:       "",
+	PersonUUID:             "",
+	PrefLabel:              "",
+	InceptionDate:          "",
+	TerminationDate:        "",
 	AlternativeIdentifiers: alternativeIdentifiers{"", []string{}},
-	MembershipRoles: []role{},
+	MembershipRoles:        []role{},
 }
 var fullMembership = membership{
-	UUID: membershipUUID,
-	OrganisationUUID:orgUUID,
-	PersonUUID: personUUID,
-	PrefLabel: "Test label",
-	InceptionDate: "2005-01-01T00:00:00.000Z",
-	TerminationDate: "2007-01-01T00:00:00.000Z",
+	UUID:                   membershipUUID,
+	OrganisationUUID:       orgUUID,
+	PersonUUID:             personUUID,
+	PrefLabel:              "Test label",
+	InceptionDate:          "2005-01-01T00:00:00.000Z",
+	TerminationDate:        "2007-01-01T00:00:00.000Z",
 	AlternativeIdentifiers: alternativeIdentifiers{"FACTSET_ID", []string{membershipUUID}},
-	MembershipRoles: []role{role{roleUUID, "2006-01-01T00:00:00.000Z", "2006-09-01T00:00:00.000Z"}},
+	MembershipRoles:        []role{role{roleUUID, "2006-01-01T00:00:00.000Z", "2006-09-01T00:00:00.000Z"}},
 }
 
 var membershipsService baseftrwapp.Service
@@ -102,7 +102,7 @@ func TestUpdateWillRemovePropertiesNoLongerPresent(t *testing.T) {
 
 	updatedMembership := membership{UUID: membershipUUID, OrganisationUUID: "67890", PersonUUID: "54321", PrefLabel: "Test2 label2",
 		AlternativeIdentifiers: alternativeIdentifiers{"FACTSET_ID2", make([]string, 0, 0)},
-		MembershipRoles: make([]role, 0, 0)}
+		MembershipRoles:        make([]role, 0, 0)}
 
 	assert.NoError(membershipsService.Write(updatedMembership), "Failed to write updated membership")
 	readMembershipForUuidAndCheckFieldsMatch(t, membershipUUID, updatedMembership)
@@ -119,7 +119,7 @@ func TestUpdateWillReplaceOrgAndPerson(t *testing.T) {
 
 	updatedMembership := membership{UUID: membershipUUID, OrganisationUUID: "121212", PersonUUID: "323232", PrefLabel: "Test2 label2",
 		AlternativeIdentifiers: alternativeIdentifiers{"FACTSET_ID2", make([]string, 0, 0)},
-		MembershipRoles: make([]role, 0, 0)}
+		MembershipRoles:        make([]role, 0, 0)}
 
 	assert.NoError(membershipsService.Write(updatedMembership), "Failed to write updated membership")
 	readMembershipForUuidAndCheckFieldsMatch(t, membershipUUID, updatedMembership)
