@@ -5,6 +5,7 @@ memberships-rw-neo4j
 Compiled source #
 ###################
 *.exe
+memberships-rw-neo4j
 
 # Logs and databases #
 ######################

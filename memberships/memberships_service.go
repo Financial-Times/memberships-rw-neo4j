@@ -37,8 +37,8 @@ func (mcd CypherDriver) Read(uuid string) (interface{}, bool, error) {
 		MATCH (m:Membership {uuid:{uuid}})-[:HAS_ORGANISATION]->(o:Thing)
 					OPTIONAL MATCH (p:Thing)<-[:HAS_MEMBER]-(m)
 					OPTIONAL MATCH (r:Thing)<-[rr:HAS_ROLE]-(m)
-					OPTIONAL MATCH (upp:UPPIdentifier)-[:IDENTIFIES]->(n)
-					OPTIONAL MATCH (fs:FactsetIdentifier)-[:IDENTIFIES]->(n)
+					OPTIONAL MATCH (upp:UPPIdentifier)-[:IDENTIFIES]->(m)
+					OPTIONAL MATCH (fs:FactsetIdentifier)-[:IDENTIFIES]->(m)
 					WITH p, m, o, upp, fs, collect({roleuuid:r.uuid,inceptionDate:rr.inceptionDate,terminationDate:rr.terminationDate}) as membershipRoles
 					return
 						m.uuid as uuid,
@@ -220,10 +220,12 @@ func (mcd CypherDriver) Delete(uuid string) (bool, error) {
 				OPTIONAL MATCH (m)-[prel:HAS_MEMBER]->(p:Thing)
 				OPTIONAL MATCH (m)-[orel:HAS_ORGANISATION]->(o:Thing)
 				OPTIONAL MATCH (r:Thing)<-[rrel:HAS_ROLE]-(m)
+				OPTIONAL MATCH (m)<-[iden:IDENTIFIES]-(i:Identifier)
 				REMOVE m:Concept
 				REMOVE m:Membership
+				DELETE iden, i
 				SET m={props}
-				DElETE rrel, orel, prel
+				DELETE rrel, orel, prel
 		`,
 		Parameters: map[string]interface{}{
 			"uuid": uuid,
@@ -303,7 +305,3 @@ func addDateToQueryParams(params map[string]interface{}, dateName string, dateVa
 	params[dateName+"Epoch"] = datetimeEpoch.Unix()
 	return nil
 }
-
-const (
-	fsAuthority = "http://api.ft.com/system/FACTSET"
-)
