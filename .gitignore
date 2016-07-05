@@ -1,6 +1,11 @@
+notes.md
+memberships-rw-neo4j
+.idea/
+
 Compiled source #
 ###################
 *.exe
+memberships-rw-neo4j
 
 # Logs and databases #
 ######################
