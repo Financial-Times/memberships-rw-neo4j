@@ -73,13 +73,20 @@ func TestCreateMembership(t *testing.T) {
 		membershipToTest membership
 	}{
 		{minimalMembership},
-		//{fullMembership},
+		{fullMembership},
 	}
 	for _, test := range tests {
 		assert.NoError(membershipsService.Write(test.membershipToTest), "Failed to write membership")
 		readMembershipForUuidAndCheckFieldsMatch(t, membershipUUID, test.membershipToTest)
-		cleanUpRelationshipsAndRelatedNodes(t, membershipUUID)
+
 		cleanUp(t, membershipUUID)
+
+		//clean-up left-over nodes
+		cleanUpNode(t, test.membershipToTest.PersonUUID)
+		cleanUpNode(t, test.membershipToTest.OrganisationUUID)
+		for _, role := range test.membershipToTest.MembershipRoles {
+			cleanUpNode(t, role.RoleUUID)
+		}
 	}
 }
 
@@ -90,8 +97,15 @@ func TestCreateHandlesSpecialCharacters(t *testing.T) {
 	membershipToWrite.PrefLabel = "Test's 'are' Us"
 	assert.NoError(membershipsService.Write(membershipToWrite), "Failed to write membership")
 	readMembershipForUuidAndCheckFieldsMatch(t, membershipUUID, membershipToWrite)
-	cleanUpRelationshipsAndRelatedNodes(t, membershipUUID)
+
 	cleanUp(t, membershipUUID)
+
+	//clean-up left-over nodes
+	cleanUpNode(t, membershipToWrite.PersonUUID)
+	cleanUpNode(t, membershipToWrite.OrganisationUUID)
+	for _, role := range membershipToWrite.MembershipRoles {
+		cleanUpNode(t, role.RoleUUID)
+	}
 }
 
 func TestUpdateWillRemovePropertiesNoLongerPresent(t *testing.T) {
@@ -100,15 +114,27 @@ func TestUpdateWillRemovePropertiesNoLongerPresent(t *testing.T) {
 	assert.NoError(membershipsService.Write(fullMembership), "Failed to write membership")
 	readMembershipForUuidAndCheckFieldsMatch(t, membershipUUID, fullMembership)
 
-	updatedMembership := membership{UUID: membershipUUID, OrganisationUUID: "67890", PersonUUID: "54321", PrefLabel: "Test2 label2",
+	updatedMembership := membership{UUID: membershipUUID, OrganisationUUID: "67890", PersonUUID: "67890", PrefLabel: "Test2 label2",
 		AlternativeIdentifiers: alternativeIdentifiers{"FACTSET_ID2", make([]string, 0, 0)},
 		MembershipRoles:        make([]role, 0, 0)}
 
 	assert.NoError(membershipsService.Write(updatedMembership), "Failed to write updated membership")
 	readMembershipForUuidAndCheckFieldsMatch(t, membershipUUID, updatedMembership)
-	cleanUpRelationshipsAndRelatedNodes(t, membershipUUID)
-	cleanUpNode(t, roleUUID)
+
 	cleanUp(t, membershipUUID)
+
+	//clean-up left-over nodes
+	cleanUpNode(t, fullMembership.PersonUUID)
+	cleanUpNode(t, fullMembership.OrganisationUUID)
+	for _, role := range fullMembership.MembershipRoles {
+		cleanUpNode(t, role.RoleUUID)
+	}
+
+	cleanUpNode(t, updatedMembership.PersonUUID)
+	cleanUpNode(t, updatedMembership.OrganisationUUID)
+	for _, role := range updatedMembership.MembershipRoles {
+		cleanUpNode(t, role.RoleUUID)
+	}
 }
 
 func TestUpdateWillReplaceOrgAndPerson(t *testing.T) {
@@ -123,13 +149,21 @@ func TestUpdateWillReplaceOrgAndPerson(t *testing.T) {
 
 	assert.NoError(membershipsService.Write(updatedMembership), "Failed to write updated membership")
 	readMembershipForUuidAndCheckFieldsMatch(t, membershipUUID, updatedMembership)
-	cleanUpRelationshipsAndRelatedNodes(t, membershipUUID)
+
 	cleanUp(t, membershipUUID)
 
 	//clean-up left-over nodes
-	cleanUpNode(t, roleUUID)
-	cleanUpNode(t, personUUID)
-	cleanUpNode(t, orgUUID)
+	cleanUpNode(t, fullMembership.PersonUUID)
+	cleanUpNode(t, fullMembership.OrganisationUUID)
+	for _, role := range fullMembership.MembershipRoles {
+		cleanUpNode(t, role.RoleUUID)
+	}
+
+	cleanUpNode(t, updatedMembership.PersonUUID)
+	cleanUpNode(t, updatedMembership.OrganisationUUID)
+	for _, role := range updatedMembership.MembershipRoles {
+		cleanUpNode(t, role.RoleUUID)
+	}
 }
 
 func TestWriteCalculateEpocCorrectly(t *testing.T) {
@@ -196,28 +230,13 @@ func cleanUp(t *testing.T, uuid string) {
 	assert.NoError(err, "Error deleting membership for uuid %s", uuid)
 }
 
-func cleanUpRelationshipsAndRelatedNodes(t *testing.T, uuid string) {
-	assert := assert.New(t)
-	membershipsCypherDriver := getMembershipsCypherDriver(t)
-	query := &neoism.CypherQuery{
-		Statement: `
-				MATCH (m:Thing {uuid: {muuid}})
-				OPTIONAL MATCH (n)<-[rel]-(m)
-			    delete rel, n
-			`,
-		Parameters: map[string]interface{}{
-			"muuid": uuid,
-		},
-	}
-	assert.NoError(membershipsCypherDriver.cypherRunner.CypherBatch([]*neoism.CypherQuery{query}), "Error deleting membership for uuid %s", uuid)
-}
-
 func cleanUpNode(t *testing.T, uuid string) {
 	assert := assert.New(t)
 	membershipsCypherDriver := getMembershipsCypherDriver(t)
 	query := &neoism.CypherQuery{
 		Statement: `MATCH (m:Thing {uuid: {muuid}})
-			    delete m
+			    OPTIONAL MATCH (m)<-[id:IDENTIFIES]-(i)
+			    delete id,i,m
 			`,
 		Parameters: map[string]interface{}{
 			"muuid": uuid,

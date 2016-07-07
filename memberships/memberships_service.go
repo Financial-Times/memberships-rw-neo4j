@@ -138,9 +138,11 @@ func (mcd CypherDriver) Write(thing interface{}) error {
 
 	createMembershipQuery := &neoism.CypherQuery{
 		Statement: `MERGE (m:Thing	 {uuid: {uuid}})
-					MERGE (p:Thing {uuid: {personuuid}})
-					MERGE (o:Thing {uuid: {organisationuuid}})
-					CREATE(m)-[:HAS_MEMBER]->(p)
+			    MERGE (personUPP:Identifier:UPPIdentifier{value:{personuuid}})
+                            MERGE (personUPP)-[:IDENTIFIES]->(p:Thing) ON CREATE SET p.uuid = {personuuid}
+			    MERGE (orgUPP:Identifier:UPPIdentifier{value:{organisationuuid}})
+                            MERGE (orgUPP)-[:IDENTIFIES]->(o:Thing) ON CREATE SET o.uuid = {organisationuuid}
+			    CREATE(m)-[:HAS_MEMBER]->(p)
 		            CREATE (m)-[:HAS_ORGANISATION]->(o)
 					set m={allprops}
 					set m :Concept
@@ -181,7 +183,8 @@ func (mcd CypherDriver) Write(thing interface{}) error {
 		q := &neoism.CypherQuery{
 			Statement: `
 				MERGE (m:Thing {uuid:{muuid}})
-				MERGE (r:Thing {uuid:{ruuid}})
+				MERGE (roleUPP:Identifier:UPPIdentifier{value:{ruuid}})
+                           	MERGE (roleUPP)-[:IDENTIFIES]->(r:Thing) ON CREATE SET r.uuid = {ruuid}
 				CREATE (m)-[rel:HAS_ROLE]->(r)
 				SET rel={rrparams}
 			`,
