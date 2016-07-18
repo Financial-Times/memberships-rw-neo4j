@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	app := cli.App("roles-rw-neo4j", "A RESTful API for managing Membership Roles in neo4j")
+	app := cli.App("memberships-rw-neo4j", "A RESTful API for managing Membership Roles in neo4j")
 	neoURL := app.String(cli.StringOpt{
 		Name:   "neo-url",
 		Value:  "http://localhost:7474/db/data",
@@ -72,23 +72,28 @@ func main() {
 
 		baseftrwapp.OutputMetricsIfRequired(*graphiteTCPAddress, *graphitePrefix, *logMetrics)
 
-		engs := map[string]baseftrwapp.Service{
+		services := map[string]baseftrwapp.Service{
 			"memberships": membershipsDriver,
 		}
 
 		var checks []v1a.Check
-		for _, e := range engs {
-			checks = append(checks, makeCheck(e, batchRunner))
+		for _, service := range services {
+			checks = append(checks, makeCheck(service, batchRunner))
 		}
 
-		baseftrwapp.RunServer(engs,
-			v1a.Handler("ft-memberships_rw_neo4j ServiceModule", "Writes 'memberships' to Neo4j, usually as part of a bulk upload done on a schedule", checks...),
-			*port, "memberships-rw-neo4j", *env)
+		baseftrwapp.RunServerWithConf(baseftrwapp.RWConf{
+			Services:      services,
+			HealthHandler: v1a.Handler("ft-memberships_rw_neo4j ServiceModule", "Writes 'memberships' to Neo4j, usually as part of a bulk upload done on a schedule", checks...),
+			Port:          *port,
+			ServiceName:   "memberships-rw-neo4j",
+			Env:           *env,
+			EnableReqLog:  false,
+		})
 	}
 
-	app.Run(os.Args)
 	log.SetLevel(log.InfoLevel)
 	log.Println("Application started with args %s", os.Args)
+	app.Run(os.Args)
 }
 
 func makeCheck(service baseftrwapp.Service, cr neoutils.CypherRunner) v1a.Check {
