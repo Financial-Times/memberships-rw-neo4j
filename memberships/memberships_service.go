@@ -21,6 +21,15 @@ func NewCypherDriver(cypherRunner neoutils.CypherRunner, indexManager neoutils.I
 }
 
 func (mcd CypherDriver) Initialise() error {
+
+	err := neoutils.EnsureIndexes(mcd.indexManager,  map[string]string{
+		"Identifier": "value",
+	})
+
+	if err != nil {
+		return err
+	}
+
 	return neoutils.EnsureConstraints(mcd.indexManager, map[string]string{
 		"Thing":             "uuid",
 		"Concept":           "uuid",
