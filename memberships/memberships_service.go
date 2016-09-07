@@ -11,18 +11,17 @@ import (
 	"github.com/jmcvetta/neoism"
 )
 
-type CypherDriver struct {
-	cypherRunner neoutils.CypherRunner
-	indexManager neoutils.IndexManager
+type service struct {
+	conn neoutils.NeoConnection
 }
 
-func NewCypherDriver(cypherRunner neoutils.CypherRunner, indexManager neoutils.IndexManager) CypherDriver {
-	return CypherDriver{cypherRunner, indexManager}
+func NewCypherMembershipService(cypherRunner neoutils.NeoConnection) service {
+	return service{cypherRunner}
 }
 
-func (mcd CypherDriver) Initialise() error {
+func (s service) Initialise() error {
 
-	err := neoutils.EnsureIndexes(mcd.indexManager,  map[string]string{
+	err := s.conn.EnsureIndexes(map[string]string{
 		"Identifier": "value",
 	})
 
@@ -30,7 +29,7 @@ func (mcd CypherDriver) Initialise() error {
 		return err
 	}
 
-	return neoutils.EnsureConstraints(mcd.indexManager, map[string]string{
+	return s.conn.EnsureConstraints(map[string]string{
 		"Thing":             "uuid",
 		"Concept":           "uuid",
 		"Membership":        "uuid",
@@ -38,7 +37,7 @@ func (mcd CypherDriver) Initialise() error {
 		"UPPIdentifier":     "value"})
 }
 
-func (mcd CypherDriver) Read(uuid string) (interface{}, bool, error) {
+func (s service) Read(uuid string) (interface{}, bool, error) {
 	results := []membership{}
 
 	query := &neoism.CypherQuery{
@@ -64,7 +63,7 @@ func (mcd CypherDriver) Read(uuid string) (interface{}, bool, error) {
 		},
 		Result: &results,
 	}
-	err := mcd.cypherRunner.CypherBatch([]*neoism.CypherQuery{query})
+	err := s.conn.CypherBatch([]*neoism.CypherQuery{query})
 
 	if err != nil {
 		return membership{}, false, err
@@ -85,7 +84,7 @@ func (mcd CypherDriver) Read(uuid string) (interface{}, bool, error) {
 	return result, true, nil
 }
 
-func (mcd CypherDriver) Write(thing interface{}) error {
+func (s service) Write(thing interface{}) error {
 	m := thing.(membership)
 
 	queries := []*neoism.CypherQuery{}
@@ -207,7 +206,7 @@ func (mcd CypherDriver) Write(thing interface{}) error {
 		queries = append(queries, q)
 	}
 	log.WithFields(log.Fields{"query_count": len(queries)}).Debug("Executing queries...")
-	return mcd.cypherRunner.CypherBatch(queries)
+	return s.conn.CypherBatch(queries)
 }
 
 func createNewIdentifierQuery(uuid string, identifierLabel string, identifierValue string) *neoism.CypherQuery {
@@ -225,7 +224,7 @@ func createNewIdentifierQuery(uuid string, identifierLabel string, identifierVal
 	return query
 }
 
-func (mcd CypherDriver) Delete(uuid string) (bool, error) {
+func (s service) Delete(uuid string) (bool, error) {
 	clearNode := &neoism.CypherQuery{
 		Statement: `
 				MATCH (m:Thing {uuid: {uuid}})
@@ -262,7 +261,7 @@ func (mcd CypherDriver) Delete(uuid string) (bool, error) {
 		},
 	}
 
-	err := mcd.cypherRunner.CypherBatch([]*neoism.CypherQuery{clearNode, removeNodeIfUnused})
+	err := s.conn.CypherBatch([]*neoism.CypherQuery{clearNode, removeNodeIfUnused})
 
 	s1, err := clearNode.Stats()
 	if err != nil {
@@ -277,18 +276,18 @@ func (mcd CypherDriver) Delete(uuid string) (bool, error) {
 	return deleted, err
 }
 
-func (pcd CypherDriver) DecodeJSON(dec *json.Decoder) (interface{}, string, error) {
+func (s service) DecodeJSON(dec *json.Decoder) (interface{}, string, error) {
 	m := membership{}
 	err := dec.Decode(&m)
 	return m, m.UUID, err
 
 }
 
-func (pcd CypherDriver) Check() error {
-	return neoutils.Check(pcd.cypherRunner)
+func (s service) Check() error {
+	return neoutils.Check(s.conn)
 }
 
-func (pcd CypherDriver) Count() (int, error) {
+func (s service) Count() (int, error) {
 
 	results := []struct {
 		Count int `json:"c"`
@@ -299,7 +298,7 @@ func (pcd CypherDriver) Count() (int, error) {
 		Result:    &results,
 	}
 
-	err := pcd.cypherRunner.CypherBatch([]*neoism.CypherQuery{query})
+	err := s.conn.CypherBatch([]*neoism.CypherQuery{query})
 
 	if err != nil {
 		return 0, err
