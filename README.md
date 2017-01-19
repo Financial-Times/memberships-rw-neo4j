@@ -82,7 +82,9 @@ Note the data in the example (e.g. UUIDs) is not real.
 
 * Good-to-go: [http://localhost:8080/__gtg](http://localhost:8080/__gtg)
 
-* Ping: [http://localhost:8080/ping](http://localhost:8080/ping)
+* Ping: [http://localhost:8080/__ping](http://localhost:8080/__ping) or [http://localhost:8080/ping](http://localhost:8080/ping)  
+
+* Build Info: [http://localhost:8080/__build-info](http://localhost:8080/__build-info) or [http://localhost:8080/build-info](http://localhost:8080/build-info) 
 
 
 ### View your data in the database
