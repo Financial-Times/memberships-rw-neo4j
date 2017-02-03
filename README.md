@@ -4,8 +4,7 @@ Memberships Reader/Writer for Neo4j (memberships-rw-neo4j)
 __An API for reading/writing memberships into Neo4j. Expects the memberships json supplied to be in the format
 that comes out of the memberships transformer.__
 
-[![CircleCI](https://circleci.com/gh/Financial-Times/memberships-rw-neo4j.svg?style=svg)](https://circleci.com/gh/Financial-Times/memberships-rw-neo4j)
-
+[![Circle CI](https://circleci.com/gh/Financial-Times/memberships-rw-neo4j.svg?style=shield)](https://circleci.com/gh/Financial-Times/memberships-rw-neo4j)[![Go Report Card](https://goreportcard.com/badge/github.com/Financial-Times/memberships-rw-neo4j)](https://goreportcard.com/report/github.com/Financial-Times/memberships-rw-neo4j) [![Coverage Status](https://coveralls.io/repos/github/Financial-Times/memberships-rw-neo4j/badge.svg)](https://coveralls.io/github/Financial-Times/memberships-rw-neo4j)
 
 Installation
 ------------
