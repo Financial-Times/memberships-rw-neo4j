@@ -1,6 +1,7 @@
 notes.md
 memberships-rw-neo4j
 .idea/
+*.iml
 
 Compiled source #
 ###################
