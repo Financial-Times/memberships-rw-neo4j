@@ -1,0 +1,4 @@
+# Values used for the deployed application.
+replicaCount: 2
+service:
+  name: memberships-rw-neo4j
