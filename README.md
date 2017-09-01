@@ -93,7 +93,7 @@ Note the data in the example (e.g. UUIDs) is not real.
 
 ### Logging
 
-The application uses [logrus](https://github.com/Sirupsen/logrus), the log file is initialised in [main.go](main.go).
+The application uses [logrus](https://github.com/sirupsen/logrus), the log file is initialised in [main.go](main.go).
 Logging requires an `env` app parameter, for all environments other than local logs are written to file.
 When running locally, logging is written to console (if you want to log locally to file you need to pass in an env parameter
 that is != `local`.)
