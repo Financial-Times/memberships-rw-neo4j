@@ -7,7 +7,7 @@ import (
 
 	"fmt"
 	"github.com/Financial-Times/neo-utils-go/neoutils"
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/jmcvetta/neoism"
 )
 
