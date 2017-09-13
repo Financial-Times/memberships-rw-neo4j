@@ -43,7 +43,7 @@ func TestCreateFullMembership(t *testing.T) {
 	membershipDriver := getCypherDriver(db)
 	defer cleanDB(db, t, assert)
 
-	assert.NoError(membershipDriver.Write(fullMembership), "Failed to write membership")
+	assert.NoError(membershipDriver.Write(fullMembership, "TRANS_ID"), "Failed to write membership")
 	readMembershipAndCompare(fullMembership, t, db)
 }
 
@@ -53,13 +53,13 @@ func TestDeleteMembership(t *testing.T) {
 	membershipDriver := getCypherDriver(db)
 	defer cleanDB(db, t, assert)
 
-	assert.NoError(membershipDriver.Write(fullMembership), "Failed to write membership")
+	assert.NoError(membershipDriver.Write(fullMembership, "TRANS_ID"), "Failed to write membership")
 
-	found, err := membershipDriver.Delete(membershipUUID)
+	found, err := membershipDriver.Delete(membershipUUID, "TRANS_ID")
 	assert.True(found, "Didn't manage to delete membership for uuid %", membershipUUID)
 	assert.NoError(err, "Error deleting membership for uuid %s", membershipUUID)
 
-	m, found, err := membershipDriver.Read(membershipUUID)
+	m, found, err := membershipDriver.Read(membershipUUID, "TRANS_ID")
 
 	assert.Equal(membership{}, m, "Found membership %s who should have been deleted", m)
 	assert.False(found, "Found membership for uuid %s who should have been deleted", membershipUUID)
@@ -74,7 +74,7 @@ func TestCreateHandlesSpecialCharacters(t *testing.T) {
 
 	membershipToWrite := membership{UUID: membershipUUID, PrefLabel: "Engineér", PersonUUID: personUUID, OrganisationUUID: orgUUID, AlternativeIdentifiers: alternativeIdentifiers{FactsetIdentifier: "FACTSET_ID", UUIDS: []string{membershipUUID}}, MembershipRoles: []role{role{roleUUID, "2006-01-01T00:00:00.000Z", "2006-09-01T00:00:00.000Z"}}}
 
-	assert.NoError(membershipDriver.Write(membershipToWrite), "Failed to write membership")
+	assert.NoError(membershipDriver.Write(membershipToWrite, "TRANS_ID"), "Failed to write membership")
 
 	readMembershipAndCompare(membershipToWrite, t, db)
 }
@@ -85,8 +85,8 @@ func TestUpdateWillRemovePropertiesNoLongerPresent(t *testing.T) {
 	membershipDriver := getCypherDriver(db)
 	defer cleanDB(db, t, assert)
 
-	assert.NoError(membershipDriver.Write(fullMembership), "Failed to write membership")
-	storedFullMembership, _, err := membershipDriver.Read(membershipUUID)
+	assert.NoError(membershipDriver.Write(fullMembership, "TRANS_ID"), "Failed to write membership")
+	storedFullMembership, _, err := membershipDriver.Read(membershipUUID, "TRANS_ID")
 
 	assert.NoError(err)
 	assert.NotEmpty(storedFullMembership)
@@ -99,7 +99,7 @@ func TestUpdateWillRemovePropertiesNoLongerPresent(t *testing.T) {
 		MembershipRoles:        []role{role{roleUUID, "value1", "value2"}},
 	}
 
-	assert.NoError(membershipDriver.Write(minimalMembership), "Failed to write updated membership")
+	assert.NoError(membershipDriver.Write(minimalMembership, "TRANS_ID"), "Failed to write updated membership")
 
 	readMembershipAndCompare(minimalMembership, t, db)
 }
@@ -110,8 +110,8 @@ func TestUpdateWillReplaceOrgAndPerson(t *testing.T) {
 	membershipDriver := getCypherDriver(db)
 	defer cleanDB(db, t, assert)
 
-	assert.NoError(membershipDriver.Write(fullMembership), "Failed to write membership")
-	storedFullMembership, _, err := membershipDriver.Read(membershipUUID)
+	assert.NoError(membershipDriver.Write(fullMembership, "TRANS_ID"), "Failed to write membership")
+	storedFullMembership, _, err := membershipDriver.Read(membershipUUID, "TRANS_ID")
 
 	assert.NoError(err)
 	assert.NotEmpty(storedFullMembership)
@@ -124,7 +124,7 @@ func TestUpdateWillReplaceOrgAndPerson(t *testing.T) {
 		MembershipRoles:        []role{role{roleUUID, "value1", "value2"}},
 	}
 
-	assert.NoError(membershipDriver.Write(updatedMembership), "Failed to write updated membership")
+	assert.NoError(membershipDriver.Write(updatedMembership, "TRANS_ID"), "Failed to write updated membership")
 
 	readMembershipAndCompare(updatedMembership, t, db)
 }
@@ -135,7 +135,7 @@ func TestWriteCalculateEpocCorrectly(t *testing.T) {
 	membershipDriver := getCypherDriver(db)
 	defer cleanDB(db, t, assert)
 
-	assert.NoError(membershipDriver.Write(fullMembership), "Failed to write membership")
+	assert.NoError(membershipDriver.Write(fullMembership, "TRANS_ID"), "Failed to write membership")
 
 	result := []struct {
 		MembershipInceptionDateEpoch   int `json:"m.inceptionDateEpoch"`
@@ -237,7 +237,7 @@ func checkDbClean(db neoutils.NeoConnection, t *testing.T) {
 func readMembershipAndCompare(expected membership, t *testing.T, db neoutils.NeoConnection) {
 	sort.Strings(expected.AlternativeIdentifiers.UUIDS)
 
-	actual, found, err := getCypherDriver(db).Read(expected.UUID)
+	actual, found, err := getCypherDriver(db).Read(expected.UUID, "TRANS_ID")
 	assert.NoError(t, err)
 	assert.True(t, found)
 
