@@ -7,11 +7,7 @@ service:
 replicaCount: 2
 image:
   repository: coco/memberships-rw-neo4j
-  pullPolicy: Always
-memberships_rw_neo4j:
-  graphite_prefix: "coco.services.k8s.memberships-rw-neo4j"
+  pullPolicy: IfNotPresent
 resources:
   limits:
     memory: 256Mi
-
-

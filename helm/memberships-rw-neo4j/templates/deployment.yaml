@@ -31,7 +31,7 @@ spec:
               name: global-config 
               key: graphite.address
         - name: GRAPHITE_PREFIX
-          value:  {{ .Values.memberships_rw_neo4j.graphite_prefix }}
+          value: 'coco.services.{{required "The target_env value is required for this app. Use helm upgrade ... --set target_env=... when installing." .Values.target_env}}.{{ .Values.service.name }}'
         - name: BATCH_SIZE
           valueFrom:
             configMapKeyRef:
