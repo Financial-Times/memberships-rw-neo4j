@@ -37,7 +37,7 @@ func (s service) Initialise() error {
 		"UPPIdentifier":     "value"})
 }
 
-func (s service) Read(uuid string) (interface{}, bool, error) {
+func (s service) Read(uuid string, transId string) (interface{}, bool, error) {
 	results := []membership{}
 
 	query := &neoism.CypherQuery{
@@ -84,7 +84,7 @@ func (s service) Read(uuid string) (interface{}, bool, error) {
 	return result, true, nil
 }
 
-func (s service) Write(thing interface{}) error {
+func (s service) Write(thing interface{}, transId string) error {
 	m := thing.(membership)
 
 	queries := []*neoism.CypherQuery{}
@@ -224,7 +224,7 @@ func createNewIdentifierQuery(uuid string, identifierLabel string, identifierVal
 	return query
 }
 
-func (s service) Delete(uuid string) (bool, error) {
+func (s service) Delete(uuid string, trans string) (bool, error) {
 	clearNode := &neoism.CypherQuery{
 		Statement: `
 				MATCH (m:Thing {uuid: {uuid}})
