@@ -6,9 +6,10 @@ import (
 	"time"
 
 	"fmt"
+
 	"github.com/Financial-Times/neo-utils-go/neoutils"
-	log "github.com/sirupsen/logrus"
 	"github.com/jmcvetta/neoism"
+	log "github.com/sirupsen/logrus"
 )
 
 type service struct {
