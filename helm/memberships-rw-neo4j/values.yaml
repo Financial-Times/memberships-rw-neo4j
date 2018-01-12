@@ -9,5 +9,7 @@ image:
   repository: coco/memberships-rw-neo4j
   pullPolicy: IfNotPresent
 resources:
+  requests:
+    memory: 25Mi
   limits:
     memory: 256Mi

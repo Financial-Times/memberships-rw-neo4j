@@ -21,10 +21,10 @@
 			"revisionTime": "2017-08-31T12:49:05Z"
 		},
 		{
-			"checksumSHA1": "FUhczVSvt/VQAlWfzATo1YLez2E=",
-			"path": "github.com/Financial-Times/go-fthealth/v1a",
-			"revision": "e7ccca038327a0091303a52445ec1f0fb66cb97b",
-			"revisionTime": "2017-05-25T09:50:41Z"
+			"checksumSHA1": "G8lW8pPVLieqh/MTJZkvI/i/WyM=",
+			"path": "github.com/Financial-Times/go-fthealth/v1_1",
+			"revision": "1b007e2b37b7936dfb6671fa17e5a29fd35a08ea",
+			"revisionTime": "2017-12-04T12:48:31Z"
 		},
 		{
 			"checksumSHA1": "dqF1g4reeLPNN10qTXgDJj3fHm4=",
@@ -58,7 +58,6 @@
 		},
 		{
 			"checksumSHA1": "+sjiZBzrsk91W1A3Md1azCkZadg=",
-			"origin": "github.com/Financial-Times/memberships-rw-neo4j/vendor/github.com/Financial-Times/transactionid-utils-go",
 			"path": "github.com/Financial-Times/transactionid-utils-go",
 			"revision": "df2f00c734957c9dd651ce23ab0e0902504c7636",
 			"revisionTime": "2017-03-28T16:39:54Z"
@@ -137,7 +136,6 @@
 		},
 		{
 			"checksumSHA1": "KAzbLjI9MzW2tjfcAsK75lVRp6I=",
-			"origin": "github.com/Financial-Times/memberships-rw-neo4j/vendor/github.com/rcrowley/go-metrics",
 			"path": "github.com/rcrowley/go-metrics",
 			"revision": "1f30fe9094a513ce4c700b9a54458bbb0c96996c",
 			"revisionTime": "2016-11-28T21:05:44Z"
@@ -168,7 +166,6 @@
 		},
 		{
 			"checksumSHA1": "dr5+PfIRzXeN+l1VG+s0lea9qz8=",
-			"origin": "github.com/Financial-Times/memberships-rw-neo4j/vendor/golang.org/x/net/context",
 			"path": "golang.org/x/net/context",
 			"revision": "b129b8e0fbeb39c8358e51a07ab6c50ad415e72e",
 			"revisionTime": "2017-03-18T16:20:41Z"
