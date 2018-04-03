@@ -1,4 +1,4 @@
-Memberships Reader/Writer for Neo4j (memberships-rw-neo4j)
+Memberships Reader/Writer for Neo4j (memberships-rw-neo4j) [RETIRED]
 ==========================================================
 
 __An API for reading/writing memberships into Neo4j. Expects the memberships json supplied to be in the format
